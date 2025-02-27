@@ -1,89 +1,173 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>File Structure Generator</title>
+
     <style>
+
         body { font-family: Arial, sans-serif; padding: 20px; }
+
         #structure { margin-top: 20px; }
+
         .entry { margin-bottom: 10px; }
+
     </style>
+
 </head>
+
 <body>
+
     <h2>File Structure Generator</h2>
+
     <textarea id="inputStructure" rows="10" cols="50" placeholder="Paste file structure here..."></textarea>
-    <button onclick="generateFiles()">Generate Files</button>
+
+    <button onclick="generateFiles()">Generate Structure</button>
+
     <button onclick="downloadZIP()">Download ZIP</button>
+
     <div id="structure"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
     <script>
+
         let fileStructure = {};
 
+
+
         function parseStructure(text) {
-            let words = text.replace(/\n/g, ' ').split(/\s+/); 
+
+            let lines = text.split('\n');
+
             let structure = {};
-            let currentPath = [];
-            
-            words.forEach(word => {
-                if (!word.includes('.')) {
-                    currentPath.push(word);
-                    let pathRef = structure;
-                    currentPath.forEach(folder => {
-                        if (!pathRef[folder]) pathRef[folder] = {};
-                        pathRef = pathRef[folder];
-                    });
-                } else {
-                    let pathRef = structure;
-                    currentPath.forEach(folder => {
-                        if (!pathRef[folder]) pathRef[folder] = {};
-                        pathRef = pathRef[folder];
-                    });
-                    pathRef[word] = '';
+
+            let stack = [structure];
+
+
+
+            lines.forEach(line => {
+
+
+                let level = line.lastIndexOf('│') + 1 || line.lastIndexOf('├') + 1 || line.lastIndexOf('└') + 1;
+
+
+                let cleanName = line.replace(/(│|├|└|──|\s)/g, '').trim();
+
+
+                let level = (line.match(/\s{2}/g) || []).length;
+
+
+                let cleanName = line.trim();
+
+
+
+                if (cleanName) {
+
+                    let isFile = cleanName.includes('.');
+
+                    let newNode = isFile ? cleanName : {};
+
+                    stack[level][cleanName] = newNode;
+
+                    stack[level + 1] = newNode;
+
                 }
+
             });
+
             return structure;
+
         }
+
+
 
         function generateFiles() {
+
             let input = document.getElementById('inputStructure').value;
+
             fileStructure = parseStructure(input);
+
             displayStructure(fileStructure, document.getElementById('structure'));
+
         }
+
+
 
         function displayStructure(structure, container, prefix = '') {
+
             container.innerHTML = '';
+
             for (let key in structure) {
+
                 let div = document.createElement('div');
+
                 div.className = 'entry';
+
                 div.textContent = prefix + key;
+
                 container.appendChild(div);
+
                 if (typeof structure[key] === 'object') {
+
                     displayStructure(structure[key], container, prefix + '  ');
+
                 }
+
             }
+
         }
 
+
+
         function downloadZIP() {
+
             let zip = new JSZip();
+
             function addFiles(zipObj, struct, path = '') {
+
                 for (let key in struct) {
+
                     if (typeof struct[key] === 'object') {
+
                         let folder = zipObj.folder(path + key);
+
                         addFiles(folder, struct[key], path + key + '/');
+
                     } else {
+
                         zipObj.file(path + key, '');
+
                     }
+
                 }
+
             }
+
             addFiles(zip, fileStructure);
+
             zip.generateAsync({ type: 'blob' }).then(blob => {
+
                 let a = document.createElement('a');
+
                 a.href = URL.createObjectURL(blob);
+
                 a.download = 'file_structure.zip';
+
                 a.click();
+
             });
+
         }
+
     </script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
 </body>
+
 </html>
