@@ -25,8 +25,8 @@
             let stack = [structure];
 
             lines.forEach(line => {
-                let level = line.lastIndexOf('│') + 1 || line.lastIndexOf('├') + 1 || line.lastIndexOf('└') + 1;
-                let cleanName = line.replace(/(│|├|└|──|\s)/g, '').trim();
+                let level = (line.match(/\s{2}/g) || []).length;
+                let cleanName = line.trim();
                 
                 if (cleanName) {
                     let isFile = cleanName.includes('.');
