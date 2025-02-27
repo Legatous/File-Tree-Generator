@@ -16,23 +16,30 @@
     <button onclick="generateFiles()">Generate Files</button>
     <button onclick="downloadZIP()">Download ZIP</button>
     <div id="structure"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
     <script>
         let fileStructure = {};
 
         function parseStructure(text) {
-            let lines = text.split('\n');
+            let words = text.replace(/\n/g, ' ').split(/\s+/); 
             let structure = {};
-            let stack = [structure];
-
-            lines.forEach(line => {
-                let level = (line.match(/\s{2}/g) || []).length;
-                let cleanName = line.trim();
-                
-                if (cleanName) {
-                    let isFile = cleanName.includes('.');
-                    let newNode = isFile ? cleanName : {};
-                    stack[level][cleanName] = newNode;
-                    stack[level + 1] = newNode;
+            let currentPath = [];
+            
+            words.forEach(word => {
+                if (!word.includes('.')) {
+                    currentPath.push(word);
+                    let pathRef = structure;
+                    currentPath.forEach(folder => {
+                        if (!pathRef[folder]) pathRef[folder] = {};
+                        pathRef = pathRef[folder];
+                    });
+                } else {
+                    let pathRef = structure;
+                    currentPath.forEach(folder => {
+                        if (!pathRef[folder]) pathRef[folder] = {};
+                        pathRef = pathRef[folder];
+                    });
+                    pathRef[word] = '';
                 }
             });
             return structure;
@@ -78,6 +85,5 @@
             });
         }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </body>
 </html>
