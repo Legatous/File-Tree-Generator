@@ -3,39 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Structure Generator</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            padding: 20px;
-        }
-        textarea {
-            width: 100%;
-            height: 100px;
-        }
-        pre {
-            background: #f4f4f4;
-            padding: 10px;
-            border-radius: 5px;
-        }
-    </style>
+    <title>File Structure Generator (ZIP)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
-    <h2>File Structure Generator</h2>
-    <p>Type a space-separated list of files and folders, then click "Generate".</p>
+    <h2>File Structure Generator (ZIP)</h2>
+    <p>Enter a space-separated file structure and click "Generate ZIP".</p>
 
     <textarea id="inputText" placeholder="Enter space-separated file structure..."></textarea>
     <br>
-    <button onclick="generateStructure()">Generate</button>
+    <button onclick="generateZip()">Generate & Download ZIP</button>
 
-    <h3>Output:</h3>
-    <pre id="output"></pre>
-
-   <script>
+    <script>
         function parseStructure(text) {
-            let words = text.split(/\s+/); // Split input by spaces
+            let words = text.split(/\s+/);
             let structure = {};
             let currentPath = [];
 
@@ -54,29 +36,38 @@
                     for (let folder of currentPath) {
                         currentFolder = currentFolder[folder];
                     }
-                    currentFolder[word] = ''; // Add file to current folder
+                    currentFolder[word] = ''; // Add empty file
                 }
             });
 
             return structure;
         }
 
-        function generateStructure() {
-            let inputText = document.getElementById("inputText").value.trim();
-            let parsedStructure = parseStructure(inputText);
-            let formattedStructure = formatStructure(parsedStructure);
-            document.getElementById("output").textContent = formattedStructure;
-        }
-
-        function formatStructure(structure, indent = 0) {
-            let result = '';
+        function addFilesToZip(zip, structure, path = "") {
             for (let key in structure) {
-                result += ' '.repeat(indent * 2) + (structure[key] === '' ? key : key + '/') + '\n';
-                if (typeof structure[key] === 'object') {
-                    result += formatStructure(structure[key], indent + 1);
+                let newPath = path ? `${path}/${key}` : key;
+                if (typeof structure[key] === "object") {
+                    addFilesToZip(zip.folder(key), structure[key], newPath);
+                } else {
+                    zip.file(newPath, ""); // Create an empty file
                 }
             }
-            return result;
+        }
+
+        function generateZip() {
+            let inputText = document.getElementById("inputText").value.trim();
+            let parsedStructure = parseStructure(inputText);
+            let zip = new JSZip();
+            addFilesToZip(zip, parsedStructure);
+
+            zip.generateAsync({ type: "blob" }).then(function (blob) {
+                let link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = "project.zip";
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
         }
     </script>
 
