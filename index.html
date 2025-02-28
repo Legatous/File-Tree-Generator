@@ -33,22 +33,28 @@
     <h3>Output:</h3>
     <pre id="output"></pre>
 
-    <script>
+   <script>
         function parseStructure(text) {
             let words = text.split(/\s+/); // Split input by spaces
             let structure = {};
-            let pathStack = [];
-            let currentFolder = structure;
+            let currentPath = [];
 
             words.forEach(word => {
                 if (!word.includes('.')) {
                     // It's a folder
-                    currentFolder[word] = {};
-                    pathStack.push(currentFolder); // Save the current position
-                    currentFolder = currentFolder[word]; // Move into the folder
+                    currentPath.push(word);
+                    let currentFolder = structure;
+                    for (let folder of currentPath) {
+                        if (!currentFolder[folder]) currentFolder[folder] = {};
+                        currentFolder = currentFolder[folder];
+                    }
                 } else {
                     // It's a file
-                    currentFolder[word] = ''; // Files are stored as empty strings
+                    let currentFolder = structure;
+                    for (let folder of currentPath) {
+                        currentFolder = currentFolder[folder];
+                    }
+                    currentFolder[word] = ''; // Add file to current folder
                 }
             });
 
