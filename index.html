@@ -3,19 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Structure Generator (ZIP)</title>
+    <title>File Structure to ZIP</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 </head>
 <body>
 
-    <h2>File Structure Generator (ZIP)</h2>
-    <p>Enter a space-separated file structure and click "Generate ZIP".</p>
+    <h2>Generate ZIP File from File Structure</h2>
+    <p>Enter a space-separated file and folder structure.</p>
 
-    <textarea id="inputText" placeholder="Enter space-separated file structure..."></textarea>
+    <textarea id="inputText" placeholder="Enter structure like: frontend src App.jsx main.jsx components TradeList.jsx"></textarea>
     <br>
-    <button onclick="generateZip()">Generate & Download ZIP</button>
+    <button onclick="generateZip()">Generate ZIP</button>
+    <button id="downloadBtn" style="display:none;" onclick="downloadZip()">Download ZIP</button>
 
     <script>
+        let generatedZip = null;
+
         function parseStructure(text) {
             let words = text.split(/\s+/);
             let structure = {};
@@ -36,7 +39,7 @@
                     for (let folder of currentPath) {
                         currentFolder = currentFolder[folder];
                     }
-                    currentFolder[word] = ''; // Add empty file
+                    currentFolder[word] = ''; // Empty file
                 }
             });
 
@@ -61,13 +64,19 @@
             addFilesToZip(zip, parsedStructure);
 
             zip.generateAsync({ type: "blob" }).then(function (blob) {
-                let link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.download = "project.zip";
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                generatedZip = blob;
+                document.getElementById("downloadBtn").style.display = "inline"; // Show download button
             });
+        }
+
+        function downloadZip() {
+            if (!generatedZip) return;
+            let link = document.createElement("a");
+            link.href = URL.createObjectURL(generatedZip);
+            link.download = "project.zip";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 
