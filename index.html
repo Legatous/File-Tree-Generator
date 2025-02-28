@@ -5,79 +5,74 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Structure Generator</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; }
-        #structure { margin-top: 20px; }
-        .entry { margin-bottom: 10px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+        }
+        pre {
+            background: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
+
     <h2>File Structure Generator</h2>
-    <textarea id="inputStructure" rows="10" cols="50" placeholder="Paste file structure here..."></textarea>
-    <button onclick="generateFiles()">Generate Files</button>
-    <button onclick="downloadZIP()">Download ZIP</button>
-    <div id="structure"></div>
+    <p>Type a space-separated list of files and folders, then click "Generate".</p>
+
+    <textarea id="inputText" placeholder="Enter space-separated file structure..."></textarea>
+    <br>
+    <button onclick="generateStructure()">Generate</button>
+
+    <h3>Output:</h3>
+    <pre id="output"></pre>
+
     <script>
-        let fileStructure = {};
-
         function parseStructure(text) {
-            let lines = text.split('\n');
+            let words = text.split(/\s+/); // Split input by spaces
             let structure = {};
-            let stack = [structure];
+            let pathStack = [];
+            let currentFolder = structure;
 
-            lines.forEach(line => {
-                let level = (line.match(/\s{2}/g) || []).length;
-                let cleanName = line.trim();
-                
-                if (cleanName) {
-                    let isFile = cleanName.includes('.');
-                    let newNode = isFile ? cleanName : {};
-                    stack[level][cleanName] = newNode;
-                    stack[level + 1] = newNode;
+            words.forEach(word => {
+                if (!word.includes('.')) {
+                    // It's a folder
+                    currentFolder[word] = {};
+                    pathStack.push(currentFolder); // Save the current position
+                    currentFolder = currentFolder[word]; // Move into the folder
+                } else {
+                    // It's a file
+                    currentFolder[word] = ''; // Files are stored as empty strings
                 }
             });
+
             return structure;
         }
 
-        function generateFiles() {
-            let input = document.getElementById('inputStructure').value;
-            fileStructure = parseStructure(input);
-            displayStructure(fileStructure, document.getElementById('structure'));
+        function generateStructure() {
+            let inputText = document.getElementById("inputText").value.trim();
+            let parsedStructure = parseStructure(inputText);
+            let formattedStructure = formatStructure(parsedStructure);
+            document.getElementById("output").textContent = formattedStructure;
         }
 
-        function displayStructure(structure, container, prefix = '') {
-            container.innerHTML = '';
+        function formatStructure(structure, indent = 0) {
+            let result = '';
             for (let key in structure) {
-                let div = document.createElement('div');
-                div.className = 'entry';
-                div.textContent = prefix + key;
-                container.appendChild(div);
+                result += ' '.repeat(indent * 2) + (structure[key] === '' ? key : key + '/') + '\n';
                 if (typeof structure[key] === 'object') {
-                    displayStructure(structure[key], container, prefix + '  ');
+                    result += formatStructure(structure[key], indent + 1);
                 }
             }
-        }
-
-        function downloadZIP() {
-            let zip = new JSZip();
-            function addFiles(zipObj, struct, path = '') {
-                for (let key in struct) {
-                    if (typeof struct[key] === 'object') {
-                        let folder = zipObj.folder(path + key);
-                        addFiles(folder, struct[key], path + key + '/');
-                    } else {
-                        zipObj.file(path + key, '');
-                    }
-                }
-            }
-            addFiles(zip, fileStructure);
-            zip.generateAsync({ type: 'blob' }).then(blob => {
-                let a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'file_structure.zip';
-                a.click();
-            });
+            return result;
         }
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+
 </body>
 </html>
